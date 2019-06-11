@@ -830,8 +830,8 @@ DEFINE_BUILTIN_OP_IMPORTER(ConvTranspose) {
   if( attrs.count("output_shape") ) {
     output_shape = attrs.get<nvinfer1::DimsHW>("output_shape");
   } else {
-    ASSERT(attrs.get("auto_pad", std::string("VALID")) == "VALID",
-           ErrorCode::kINVALID_NODE);
+    //ASSERT(attrs.get("auto_pad", std::string("VALID")) == "VALID",
+    //       ErrorCode::kINVALID_NODE);
   }
   nvinfer1::DimsHW kernel_size;
   kernel_size.h() = kernel_weights.shape.d[2];
