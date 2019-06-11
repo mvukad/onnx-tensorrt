@@ -27,6 +27,7 @@
 #include <iostream>
 #include <ctime>
 #include <fcntl.h> // For ::open
+#include <io.h>
 #include <limits>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
