@@ -278,7 +278,7 @@ bool ModelImporter::parseFromFile(const char* onnxModelFile, int verbosity)  {
       nvonnxparser::IParserError const* error = getError(i);
       if (error->node() != -1) 
       {
-        ::ONNX_NAMESPACE::NodeProto const& node = onnx_model.graph().node(error->node());
+        ::ONNX_NAMESPACE::NodeProto const& node = _onnx_models.front().graph().node(error->node());
         cerr << "While parsing node number " << error->node()
         << " [" << node.op_type();
         if (node.output().size() && verbosity >= (int) nvinfer1::ILogger::Severity::kINFO) 
