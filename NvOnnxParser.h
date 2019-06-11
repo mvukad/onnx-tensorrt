@@ -190,8 +190,8 @@ protected:
 
 } // namespace nvonnxparser
 
-extern "C" void* createNvOnnxParser_INTERNAL(void* network, void* logger, int version);
-extern "C" int   getNvOnnxParserVersion();
+extern "C" TENSORRTAPI void* createNvOnnxParser_INTERNAL(void* network, void* logger, int version);
+extern "C" TENSORRTAPI int   getNvOnnxParserVersion();
 
 namespace nvonnxparser
 {
@@ -215,8 +215,13 @@ namespace
  * \return a new parser object or NULL if an error occurred
  * \see IParser
  */
+#ifdef _MSC_VER
+TENSORRTAPI IParser* createParser(nvinfer1::INetworkDefinition& network,
+                                  nvinfer1::ILogger& logger)
+#else
 inline IParser* createParser(nvinfer1::INetworkDefinition& network,
                              nvinfer1::ILogger& logger)
+#endif
 {
     return static_cast<IParser*>(
         createNvOnnxParser_INTERNAL(&network, &logger, NV_ONNX_PARSER_VERSION));

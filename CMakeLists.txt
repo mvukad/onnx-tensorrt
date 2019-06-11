@@ -119,6 +119,7 @@ if(NOT TARGET onnx_proto)
   endif()
   add_definitions("-DONNX_NAMESPACE=${ONNX_NAMESPACE}")
   add_subdirectory(third_party/onnx EXCLUDE_FROM_ALL)
+  add_compile_definitions(TENSORRT_BUILD_LIB)
 endif()
 
 # If GPU_ARCHS is user defined, build specifically for specified SM

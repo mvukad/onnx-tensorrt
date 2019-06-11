@@ -44,7 +44,7 @@ protected:
 
 } // namespace nvonnxparser
 
-extern "C" void* createNvOnnxParserPluginFactory_INTERNAL(void* logger, int version);
+extern "C" TENSORRTAPI void* createNvOnnxParserPluginFactory_INTERNAL(void* logger, int version);
 
 namespace nvonnxparser
 {
