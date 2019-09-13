@@ -1057,7 +1057,7 @@ DEFINE_BUILTIN_OP_IMPORTER(Gemm) {
         inputASqueezed = squeeze->getOutput(0);
     }
 
-    constexpr auto getMatrixOp = [] (const nvinfer1::ITensor& input, bool transpose)
+    /*constexpr */auto getMatrixOp = [] (const nvinfer1::ITensor& input, bool transpose)
     {
         return (input.getDimensions().nbDims == 1) ?
         nvinfer1::MatrixOperation::kVECTOR :
@@ -1205,7 +1205,7 @@ DEFINE_BUILTIN_OP_IMPORTER(MatMul) {
     nvinfer1::ITensor& inputA = convertToTensor(inputs.at(0), ctx);
     nvinfer1::ITensor& inputB = convertToTensor(inputs.at(1), ctx);
 
-    constexpr auto getMatrixOp = [] (const nvinfer1::ITensor& input)
+    /*constexpr */auto getMatrixOp = [] (const nvinfer1::ITensor& input)
     {
         return (input.getDimensions().nbDims == 1) ?
             nvinfer1::MatrixOperation::kVECTOR :

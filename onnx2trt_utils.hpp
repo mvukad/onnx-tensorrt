@@ -154,7 +154,7 @@ inline void broadcast_tensors(IImporterContext* ctx, nvinfer1::ITensor*& t1, nvi
 
     nvinfer1::Dims largeDims = largeTensor->getDimensions();
     nvinfer1::Dims smallDims = smallTensor->getDimensions();
-    nvinfer1::Dims newDims({largeDims.nbDims, {1, 1, 1, 1, 1, 1, 1, 1}});
+    nvinfer1::Dims newDims{largeDims.nbDims, {1, 1, 1, 1, 1, 1, 1, 1}};
 
     int i(0), j(0);
     while (i < smallDims.nbDims && j < largeDims.nbDims)
