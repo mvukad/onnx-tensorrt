@@ -77,6 +77,19 @@ inline std::ostream& operator<<(std::ostream& stream, google::protobuf::Message 
 */
 namespace onnx2trt {
 
+inline nvinfer1::ITensor* reshape_tensor(IImporterContext* ctx, nvinfer1::ITensor& tensor, nvinfer1::Dims shape) 
+{
+  if( shape == tensor.getDimensions() ) {
+    return &tensor;
+  }
+  nvinfer1::IShuffleLayer* layer = ctx->network()->addShuffle(tensor);
+  if( !layer ) {
+    return nullptr;
+  }
+  layer->setReshapeDimensions(shape);
+  return layer->getOutput(0);
+}
+
 inline int get_dtype_size(int32_t onnx_dtype) {
   switch( onnx_dtype ) {
   case ::ONNX_NAMESPACE::TensorProto::FLOAT16:    return 2;
@@ -118,6 +131,47 @@ inline const char* get_dtype_name(int32_t onnx_dtype) {
   case ::ONNX_NAMESPACE::TensorProto::COMPLEX128: return "COMPLEX128";
   default: return "<UNKNOWN>";
   }
+}
+
+inline void broadcast_tensors(IImporterContext* ctx, nvinfer1::ITensor*& t1, nvinfer1::ITensor*& t2)
+{
+    if (t1->getDimensions().nbDims == t2->getDimensions().nbDims)
+    {
+        return;
+    }
+    nvinfer1::ITensor* largeTensor;
+    nvinfer1::ITensor* smallTensor;
+    if (t1->getDimensions().nbDims > t2->getDimensions().nbDims)
+    {
+        largeTensor = t1;
+        smallTensor = t2;
+    }
+    else
+    {
+        largeTensor = t2;
+        smallTensor = t1;
+    }
+
+    nvinfer1::Dims largeDims = largeTensor->getDimensions();
+    nvinfer1::Dims smallDims = smallTensor->getDimensions();
+    nvinfer1::Dims newDims({largeDims.nbDims, {1, 1, 1, 1, 1, 1, 1, 1}});
+
+    int i(0), j(0);
+    while (i < smallDims.nbDims && j < largeDims.nbDims)
+    {
+        if (smallDims.d[i] == largeDims.d[j])
+        {
+            newDims.d[j] = largeDims.d[j];
+            i++;
+            j++;
+        }
+        else
+        {
+            j++;
+        }
+    }
+
+    t1 == smallTensor ? t1 = reshape_tensor(ctx, *t1, newDims) : t2 = reshape_tensor(ctx, *t2, newDims);
 }
 
 inline bool check_for_input(::ONNX_NAMESPACE::NodeProto const& node, std::string const& input_node)
@@ -169,22 +223,32 @@ inline bool convert_input_dtype(int32_t onnx_dtype,
 }
 
 template<typename OnnxDims>
-inline Status convert_dims(OnnxDims const& onnx_dims, nvinfer1::Dims& trt_dims) {
+inline bool convert_dims(OnnxDims const& onnx_dims, nvinfer1::Dims& trt_dims) {
   enum { BATCH_DIM = 0 };
   std::vector<int> onnx_dims_vector;
   for( auto const& onnx_dim : onnx_dims ) {
     // TODO: Unknown dimensions are represented using onnx_dim.dim_param
     // Dynamically sized inputs are currently not supported. Catch these cases
     // as onnx_dim.dim_value() == 0 on non-batch dimensions and throw an error.
-    ASSERT(onnx_dims_vector.empty() || onnx_dim.dim_value() != 0, ErrorCode::kUNSUPPORTED_GRAPH);
-    onnx_dims_vector.push_back(onnx_dim.dim_value());
+    //ASSERT(onnx_dims_vector.empty() || onnx_dim.dim_value() != 0, ErrorCode::kUNSUPPORTED_GRAPH);
+    if (onnx_dims_vector.empty() || onnx_dim.dim_value() != 0)
+    {
+      onnx_dims_vector.push_back(onnx_dim.dim_value());
+    }
+    else
+    {
+      return false;
+    }
   }
   trt_dims.nbDims = onnx_dims_vector.size();
-  ASSERT(trt_dims.nbDims <= nvinfer1::Dims::MAX_DIMS, ErrorCode::kUNSUPPORTED_GRAPH);
+  if (trt_dims.nbDims >= nvinfer1::Dims::MAX_DIMS)
+  {
+    return false;
+  }
   std::copy(onnx_dims_vector.begin(), onnx_dims_vector.end(), trt_dims.d);
   // Remove batch dimension from trt_dims.
   trt_dims = set_dims_CHW(remove_dim(trt_dims, BATCH_DIM));
-  return Status::success();
+  return true;
 }
 
 inline bool convert_weight_descriptor(onnxTensorDescriptorV1 const &desc,
